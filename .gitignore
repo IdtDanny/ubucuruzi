@@ -4,4 +4,5 @@ node_modules
 packages/*/node_modules
 packages/*/dist
 packages/*/.next
+packages/*/.env*
 .env*
