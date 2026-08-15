@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// MINIMUM V1 SCHEMA – Just enough to get started
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  googleId      String?  @unique
+  firstName     String
+  lastName      String
+  avatar        String?
+  isActive      Boolean  @default(true)
+  isSuperAdmin  Boolean  @default(false)
+  lastLogin     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenants       UserTenant[]
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  subdomain   String?  @unique
+  logoUrl     String?
+  phone       String?
+  email       String?
+  address     String?
+  tin         String?
+  vatEnabled  Boolean  @default(true)
+  currency    String   @default("RWF")
+  timezone    String   @default("Africa/Kigali")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users           UserTenant[]
+  categories      Category[]
+  units           UnitOfMeasure[]
+  products        Product[]
+  warehouses      Warehouse[]
+  stockMovements  StockMovement[]
+  stockTransfers  StockTransfer[]   // optional: add this for convenience
+}
+
+model UserTenant {
+  id         String   @id @default(cuid())
+  userId     String
+  tenantId   String
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  user       User     @relation(fields: [userId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  role       Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, tenantId])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions String[]
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments UserTenant[]
+}
+
+// ============================================================
+// 2. CORE BUSINESS ENTITIES
+// ============================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  parent      Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+}
+
+model UnitOfMeasure {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  symbol      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  products    Product[]
+}
+
+model Product {
+  id                String      @id @default(cuid())
+  tenantId          String
+  sku               String?     @unique
+  barcode           String?
+  name              String
+  description       String?
+  categoryId        String?
+  unitOfMeasureId   String?
+  unitPrice         Float       @default(0)
+  costPrice         Float       @default(0)
+  reorderPoint      Int         @default(0)
+  isActive          Boolean     @default(true)
+  isService         Boolean     @default(false)
+  images            String[]
+  variants          Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  tenant            Tenant      @relation(fields: [tenantId], references: [id])
+  category          Category?   @relation(fields: [categoryId], references: [id])
+  unit              UnitOfMeasure? @relation(fields: [unitOfMeasureId], references: [id])
+
+  warehouseStocks   WarehouseStock[]
+  stockMovements    StockMovement[]
+  stockTransfers    StockTransfer[]   // optional: add if you want product ↔ transfers
+}
+
+model Warehouse {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  location    String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  stocks          WarehouseStock[]
+  fromTransfers   StockTransfer[] @relation("FromTransfers")
+  toTransfers     StockTransfer[] @relation("ToTransfers")
+  stockMovements  StockMovement[]
+}
+
+model WarehouseStock {
+  id          String   @id @default(cuid())
+  warehouseId String
+  productId   String
+  quantity    Int      @default(0)
+  reserved    Int      @default(0)
+  batchNumber String?
+  expiryDate  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+
+  @@unique([warehouseId, productId, batchNumber])
+}
+
+// ============================================================
+// NEW: StockTransfer model (was missing)
+// ============================================================
+model StockTransfer {
+  id               String   @id @default(cuid())
+  tenantId         String   // all data is tenant‑scoped
+  fromWarehouseId  String
+  toWarehouseId    String
+  productId        String
+  quantity         Int
+  status           String   @default("PENDING") // PENDING, IN_TRANSIT, COMPLETED, CANCELLED
+  reference        String?  // e.g., transfer note or order number
+  notes            String?
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant     @relation(fields: [tenantId], references: [id])
+  fromWarehouse    Warehouse  @relation("FromTransfers", fields: [fromWarehouseId], references: [id])
+  toWarehouse      Warehouse  @relation("ToTransfers", fields: [toWarehouseId], references: [id])
+  product          Product    @relation(fields: [productId], references: [id])
+}
+
+model StockMovement {
+  id              String   @id @default(cuid())
+  tenantId        String
+  productId       String
+  warehouseId     String
+  quantity        Int
+  movementType    String   // IN, OUT, ADJUSTMENT, TRANSFER_IN, TRANSFER_OUT
+  referenceId     String?  // Invoice ID, Purchase Order ID, etc.
+  notes           String?
+  createdAt       DateTime @default(now())
+  createdBy       String?
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
+  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
+}

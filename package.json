@@ -1,0 +1,24 @@
+{
+  "name": "ubucuruzi-erp",
+  "packageManager": "yarn@4.10.3",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:backend": "yarn workspace @ubucuruzi/backend dev",
+    "dev:frontend": "yarn workspace @ubucuruzi/frontend dev",
+    "db:generate": "yarn workspace @ubucuruzi/database generate",
+    "db:migrate": "yarn workspace @ubucuruzi/database migrate",
+    "db:seed": "yarn workspace @ubucuruzi/database seed",
+    "build": "yarn workspaces foreach --all --parallel --topological run build"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "typescript": "^5.4.5"
+  },
+  "resolutions": {
+    "typescript": "5.4.5"
+  }
+}
