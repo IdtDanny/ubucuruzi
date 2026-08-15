@@ -229,7 +229,7 @@ export default function ProductsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <Button className="gradient-primary text-white shadow-lg shadow-primary/25">
                 <Plus className="h-4 w-4 mr-2" /> Add Product
               </Button>
@@ -245,7 +245,7 @@ export default function ProductsPage() {
           </Dialog>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button variant="outline" className="glass-modern border-white/10">
                 <Download className="h-4 w-4 mr-2" /> Export
               </Button>
@@ -261,7 +261,7 @@ export default function ProductsPage() {
           </DropdownMenu>
 
           <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <Button variant="outline" className="glass-modern border-white/10">
                 <Upload className="h-4 w-4 mr-2" /> Import
               </Button>
@@ -304,7 +304,7 @@ export default function ProductsPage() {
             className="pl-10 glass-modern border-white/10 bg-transparent"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={(val) => { setCategoryFilter(val); fetchProducts(1); }}>
+        <Select value={categoryFilter} onValueChange={(val) => { setCategoryFilter(val ?? ''); fetchProducts(1); }}>
           <SelectTrigger className="w-[180px] glass-modern border-white/10 bg-transparent">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
@@ -372,7 +372,7 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          <DropdownMenuTrigger>
                             <Button variant="ghost" size="icon" className="hover:bg-white/10">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>

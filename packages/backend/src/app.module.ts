@@ -6,9 +6,11 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
-import { AppController } from './app.controller';  
-import configuration from './config/configuration';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { CustomersModule } from './customers/customers.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { AppController } from './app.controller';
+import configuration from './config/configuration';
 
 @Module({
   imports: [
@@ -20,7 +22,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ProductsModule,
     CategoriesModule,
     DashboardModule,
+    CustomersModule,
+    SuppliersModule,
   ],
-  controllers: [AppController], 
+  controllers: [AppController],
 })
 export class AppModule {}

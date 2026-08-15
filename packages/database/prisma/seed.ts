@@ -9,7 +9,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // 1. Roles
+  // ─── Roles ──────────────────────────────────────────────
   const roles = [
     { name: 'Owner', permissions: ['*'], isSystem: true },
     { name: 'Admin', permissions: ['users:manage', 'products:*', 'sales:*', 'reports:view'], isSystem: true },
@@ -24,13 +24,10 @@ async function main() {
       update: {},
       create: role,
     });
-    console.log(`✅ Role "${role.name}" seeded`);
   }
+  console.log('✅ Roles seeded');
 
-  // 2. Dummy User
-  const ownerRole = await prisma.role.findUnique({ where: { name: 'Owner' } });
-  if (!ownerRole) throw new Error('Owner role not found');
-
+  // ─── Default Tenant ─────────────────────────────────────
   const defaultTenant = await prisma.tenant.upsert({
     where: { subdomain: 'demo' },
     update: {},
@@ -40,7 +37,9 @@ async function main() {
       email: 'admin@example.com',
     },
   });
+  console.log('✅ Tenant seeded');
 
+  // ─── Default User ──────────────────────────────────────
   const hashedPassword = await bcrypt.hash('password123', 10);
   const defaultUser = await prisma.user.upsert({
     where: { email: 'admin@example.com' },
@@ -53,6 +52,9 @@ async function main() {
       isActive: true,
     },
   });
+
+  const ownerRole = await prisma.role.findUnique({ where: { name: 'Owner' } });
+  if (!ownerRole) throw new Error('Owner role not found');
 
   await prisma.userTenant.upsert({
     where: {
@@ -69,8 +71,7 @@ async function main() {
       assignedBy: defaultUser.id,
     },
   });
-
-  console.log('✅ Dummy user created: admin@example.com / password123');
+  console.log('✅ Default user seeded: admin@example.com / password123');
 
   // ─── Units of Measure ──────────────────────────────────
   const units = [
@@ -84,7 +85,7 @@ async function main() {
 
   for (const unit of units) {
     await prisma.unitOfMeasure.upsert({
-      where: { id: `unit_${unit.symbol}` }, // or use a composite unique if you have one
+      where: { id: `unit_${unit.symbol}` },
       update: {},
       create: {
         ...unit,
@@ -94,7 +95,7 @@ async function main() {
   }
   console.log('✅ Units of measure seeded');
 
-  // ─── Categories ──────────────────────────────────────
+  // ─── Categories ────────────────────────────────────────
   const categories = [
     { name: 'Electronics', description: 'Phones, laptops, accessories' },
     { name: 'Clothing', description: 'Apparel and fashion' },
@@ -114,7 +115,7 @@ async function main() {
   }
   console.log('✅ Categories seeded');
 
-  // ─── Warehouse ──────────────────────────────────────
+  // ─── Warehouse ─────────────────────────────────────────
   const warehouse = await prisma.warehouse.upsert({
     where: { id: 'default-warehouse' },
     update: {},
@@ -128,7 +129,7 @@ async function main() {
   });
   console.log('✅ Warehouse seeded');
 
-  // ─── Products ──────────────────────────────────────
+  // ─── Products ──────────────────────────────────────────
   const products = [
     { name: 'Smartphone X', sku: 'PRD-000001', unitPrice: 350000, costPrice: 280000, categoryName: 'Electronics', unitSymbol: 'pc' },
     { name: 'Laptop Pro', sku: 'PRD-000002', unitPrice: 1200000, costPrice: 950000, categoryName: 'Electronics', unitSymbol: 'pc' },
@@ -163,6 +164,44 @@ async function main() {
   }
   console.log('✅ Products seeded');
 
+  // ─── Customers ──────────────────────────────────────────
+  const customers = [
+    { name: 'Jean Paul Niyonzima', companyName: 'Niyonzima Trading', phone: '0788123456', email: 'jean@example.com', address: 'Kigali, Rwanda' },
+    { name: 'Grace Uwimana', companyName: 'Uwimana Stores', phone: '0788567890', email: 'grace@example.com', address: 'Musanze, Rwanda' },
+    { name: 'David Mugabo', companyName: 'Mugabo Hardware', phone: '0788234567', email: 'david@example.com', address: 'Huye, Rwanda' },
+  ];
+
+  for (const c of customers) {
+    await prisma.customer.upsert({
+      where: { id: `cust_${c.email}` },
+      update: {},
+      create: {
+        ...c,
+        tenantId: defaultTenant.id,
+      },
+    });
+  }
+  console.log('✅ Customers seeded');
+
+  // ─── Suppliers ──────────────────────────────────────────
+  const suppliers = [
+    { name: 'Rwanda Wholesalers Ltd', phone: '0788345678', email: 'info@rwandawholesalers.com', address: 'Kigali, Rwanda' },
+    { name: 'East African Distributors', phone: '0788456789', email: 'info@eadistributors.com', address: 'Kigali, Rwanda' },
+    { name: 'Local Foods Ltd', phone: '0788567890', email: 'info@localfoods.rw', address: 'Nyamata, Rwanda' },
+  ];
+
+  for (const s of suppliers) {
+    await prisma.supplier.upsert({
+      where: { id: `supp_${s.email}` },
+      update: {},
+      create: {
+        ...s,
+        tenantId: defaultTenant.id,
+      },
+    });
+  }
+  console.log('✅ Suppliers seeded');
+
   console.log('🎉 Seeding complete!');
 }
 
@@ -173,6 +212,7 @@ main()
 // import 'dotenv/config';
 // import { PrismaClient } from '@prisma/client';
 // import { PrismaPg } from '@prisma/adapter-pg';
+// import * as bcrypt from 'bcrypt';
 
 // const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 // const prisma = new PrismaClient({ adapter });
@@ -180,6 +220,7 @@ main()
 // async function main() {
 //   console.log('🌱 Seeding database...');
 
+//   // 1. Roles
 //   const roles = [
 //     { name: 'Owner', permissions: ['*'], isSystem: true },
 //     { name: 'Admin', permissions: ['users:manage', 'products:*', 'sales:*', 'reports:view'], isSystem: true },
@@ -197,6 +238,142 @@ main()
 //     console.log(`✅ Role "${role.name}" seeded`);
 //   }
 
+//   // 2. Dummy User
+//   const ownerRole = await prisma.role.findUnique({ where: { name: 'Owner' } });
+//   if (!ownerRole) throw new Error('Owner role not found');
+
+//   const defaultTenant = await prisma.tenant.upsert({
+//     where: { subdomain: 'demo' },
+//     update: {},
+//     create: {
+//       name: 'Demo Company',
+//       subdomain: 'demo',
+//       email: 'admin@example.com',
+//     },
+//   });
+
+//   const hashedPassword = await bcrypt.hash('password123', 10);
+//   const defaultUser = await prisma.user.upsert({
+//     where: { email: 'admin@example.com' },
+//     update: {},
+//     create: {
+//       email: 'admin@example.com',
+//       firstName: 'Admin',
+//       lastName: 'User',
+//       passwordHash: hashedPassword,
+//       isActive: true,
+//     },
+//   });
+
+//   await prisma.userTenant.upsert({
+//     where: {
+//       userId_tenantId: {
+//         userId: defaultUser.id,
+//         tenantId: defaultTenant.id,
+//       },
+//     },
+//     update: {},
+//     create: {
+//       userId: defaultUser.id,
+//       tenantId: defaultTenant.id,
+//       roleId: ownerRole.id,
+//       assignedBy: defaultUser.id,
+//     },
+//   });
+
+//   console.log('✅ Dummy user created: admin@example.com / password123');
+
+//   // ─── Units of Measure ──────────────────────────────────
+//   const units = [
+//     { name: 'Piece', symbol: 'pc' },
+//     { name: 'Kilogram', symbol: 'kg' },
+//     { name: 'Gram', symbol: 'g' },
+//     { name: 'Liter', symbol: 'L' },
+//     { name: 'Meter', symbol: 'm' },
+//     { name: 'Box', symbol: 'bx' },
+//   ];
+
+//   for (const unit of units) {
+//     await prisma.unitOfMeasure.upsert({
+//       where: { id: `unit_${unit.symbol}` }, // or use a composite unique if you have one
+//       update: {},
+//       create: {
+//         ...unit,
+//         tenantId: defaultTenant.id,
+//       },
+//     });
+//   }
+//   console.log('✅ Units of measure seeded');
+
+//   // ─── Categories ──────────────────────────────────────
+//   const categories = [
+//     { name: 'Electronics', description: 'Phones, laptops, accessories' },
+//     { name: 'Clothing', description: 'Apparel and fashion' },
+//     { name: 'Food & Beverage', description: 'Perishable and packaged goods' },
+//     { name: 'Hardware', description: 'Tools, building materials' },
+//   ];
+
+//   for (const cat of categories) {
+//     await prisma.category.upsert({
+//       where: { id: `cat_${cat.name.toLowerCase()}` },
+//       update: {},
+//       create: {
+//         ...cat,
+//         tenantId: defaultTenant.id,
+//       },
+//     });
+//   }
+//   console.log('✅ Categories seeded');
+
+//   // ─── Warehouse ──────────────────────────────────────
+//   const warehouse = await prisma.warehouse.upsert({
+//     where: { id: 'default-warehouse' },
+//     update: {},
+//     create: {
+//       id: 'default-warehouse',
+//       name: 'Main Warehouse',
+//       location: 'Kigali, Rwanda',
+//       isDefault: true,
+//       tenantId: defaultTenant.id,
+//     },
+//   });
+//   console.log('✅ Warehouse seeded');
+
+//   // ─── Products ──────────────────────────────────────
+//   const products = [
+//     { name: 'Smartphone X', sku: 'PRD-000001', unitPrice: 350000, costPrice: 280000, categoryName: 'Electronics', unitSymbol: 'pc' },
+//     { name: 'Laptop Pro', sku: 'PRD-000002', unitPrice: 1200000, costPrice: 950000, categoryName: 'Electronics', unitSymbol: 'pc' },
+//     { name: 'T-Shirt (White)', sku: 'PRD-000003', unitPrice: 15000, costPrice: 8000, categoryName: 'Clothing', unitSymbol: 'pc' },
+//     { name: 'Rice (5kg)', sku: 'PRD-000004', unitPrice: 12000, costPrice: 9000, categoryName: 'Food & Beverage', unitSymbol: 'kg' },
+//     { name: 'Hammer', sku: 'PRD-000005', unitPrice: 5000, costPrice: 3000, categoryName: 'Hardware', unitSymbol: 'pc' },
+//   ];
+
+//   for (const prod of products) {
+//     const category = await prisma.category.findFirst({ where: { name: prod.categoryName, tenantId: defaultTenant.id } });
+//     const unit = await prisma.unitOfMeasure.findFirst({ where: { symbol: prod.unitSymbol, tenantId: defaultTenant.id } });
+//     await prisma.product.upsert({
+//       where: { sku: prod.sku },
+//       update: {},
+//       create: {
+//         name: prod.name,
+//         sku: prod.sku,
+//         unitPrice: prod.unitPrice,
+//         costPrice: prod.costPrice,
+//         tenantId: defaultTenant.id,
+//         categoryId: category?.id || null,
+//         unitOfMeasureId: unit?.id || null,
+//         warehouseStocks: {
+//           create: {
+//             warehouseId: warehouse.id,
+//             quantity: Math.floor(Math.random() * 50) + 10,
+//             reserved: 0,
+//           },
+//         },
+//       },
+//     });
+//   }
+//   console.log('✅ Products seeded');
+  
 //   console.log('🎉 Seeding complete!');
 // }
 
