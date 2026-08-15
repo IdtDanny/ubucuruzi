@@ -6,6 +6,13 @@ import * as bcrypt from 'bcrypt';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
+// ─── Helpers ──────────────────────────────────────────────
+async function generateUniqueNumber(prefix: string, model: any, where: any = {}) {
+  const count = await model.count({ where });
+  return `${prefix}-${String(count + 1).padStart(6, '0')}`;
+}
+
+// ─── Main ──────────────────────────────────────────────────
 async function main() {
   console.log('🌱 Seeding database...');
 
@@ -82,15 +89,11 @@ async function main() {
     { name: 'Meter', symbol: 'm' },
     { name: 'Box', symbol: 'bx' },
   ];
-
   for (const unit of units) {
     await prisma.unitOfMeasure.upsert({
       where: { id: `unit_${unit.symbol}` },
       update: {},
-      create: {
-        ...unit,
-        tenantId: defaultTenant.id,
-      },
+      create: { ...unit, tenantId: defaultTenant.id },
     });
   }
   console.log('✅ Units of measure seeded');
@@ -102,15 +105,11 @@ async function main() {
     { name: 'Food & Beverage', description: 'Perishable and packaged goods' },
     { name: 'Hardware', description: 'Tools, building materials' },
   ];
-
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { id: `cat_${cat.name.toLowerCase()}` },
       update: {},
-      create: {
-        ...cat,
-        tenantId: defaultTenant.id,
-      },
+      create: { ...cat, tenantId: defaultTenant.id },
     });
   }
   console.log('✅ Categories seeded');
@@ -137,7 +136,6 @@ async function main() {
     { name: 'Rice (5kg)', sku: 'PRD-000004', unitPrice: 12000, costPrice: 9000, categoryName: 'Food & Beverage', unitSymbol: 'kg' },
     { name: 'Hammer', sku: 'PRD-000005', unitPrice: 5000, costPrice: 3000, categoryName: 'Hardware', unitSymbol: 'pc' },
   ];
-
   for (const prod of products) {
     const category = await prisma.category.findFirst({ where: { name: prod.categoryName, tenantId: defaultTenant.id } });
     const unit = await prisma.unitOfMeasure.findFirst({ where: { symbol: prod.unitSymbol, tenantId: defaultTenant.id } });
@@ -170,15 +168,11 @@ async function main() {
     { name: 'Grace Uwimana', companyName: 'Uwimana Stores', phone: '0788567890', email: 'grace@example.com', address: 'Musanze, Rwanda' },
     { name: 'David Mugabo', companyName: 'Mugabo Hardware', phone: '0788234567', email: 'david@example.com', address: 'Huye, Rwanda' },
   ];
-
   for (const c of customers) {
     await prisma.customer.upsert({
       where: { id: `cust_${c.email}` },
       update: {},
-      create: {
-        ...c,
-        tenantId: defaultTenant.id,
-      },
+      create: { ...c, tenantId: defaultTenant.id },
     });
   }
   console.log('✅ Customers seeded');
@@ -189,20 +183,16 @@ async function main() {
     { name: 'East African Distributors', phone: '0788456789', email: 'info@eadistributors.com', address: 'Kigali, Rwanda' },
     { name: 'Local Foods Ltd', phone: '0788567890', email: 'info@localfoods.rw', address: 'Nyamata, Rwanda' },
   ];
-
   for (const s of suppliers) {
     await prisma.supplier.upsert({
       where: { id: `supp_${s.email}` },
       update: {},
-      create: {
-        ...s,
-        tenantId: defaultTenant.id,
-      },
+      create: { ...s, tenantId: defaultTenant.id },
     });
   }
   console.log('✅ Suppliers seeded');
 
-  // ─── Quotations ──────────────────────────────────────────
+  // ─── Quotations (idempotent with upsert) ──────────────
   const quotations = [
     {
       customerEmail: 'jean@example.com',
@@ -225,10 +215,18 @@ async function main() {
     if (!customer) continue;
     const total = q.items.reduce((s, i) => s + i.qty * i.price, 0);
     const tax = total * 0.18;
+    const number = `QTN-${String(quotations.indexOf(q) + 1).padStart(6, '0')}`;
+    // Upsert by unique number
+    const existing = await prisma.quotation.findUnique({ where: { number } });
+    if (existing) {
+      // Update existing: delete items and recreate? Or skip? For simplicity, we'll skip if exists.
+      console.log(`Quotation ${number} already exists, skipping.`);
+      continue;
+    }
     await prisma.quotation.create({
       data: {
         tenantId: defaultTenant.id,
-        number: `QTN-${String(quotations.indexOf(q) + 1).padStart(6, '0')}`,
+        number,
         customerId: customer.id,
         issueDate: new Date(),
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -249,7 +247,7 @@ async function main() {
   }
   console.log('✅ Quotations seeded');
 
-  // ─── Purchase Orders ──────────────────────────────────────
+  // ─── Purchase Orders (idempotent) ─────────────────────
   const purchaseOrders = [
     {
       supplierName: 'Rwanda Wholesalers Ltd',
@@ -259,16 +257,21 @@ async function main() {
       ],
     },
   ];
-
   for (const po of purchaseOrders) {
     const supplier = await prisma.supplier.findFirst({ where: { name: po.supplierName, tenantId: defaultTenant.id } });
     if (!supplier) continue;
     const total = po.items.reduce((s, i) => s + i.qty * i.cost, 0);
     const tax = total * 0.18;
+    const number = `PO-${String(purchaseOrders.indexOf(po) + 1).padStart(6, '0')}`;
+    const existing = await prisma.purchaseOrder.findUnique({ where: { number } });
+    if (existing) {
+      console.log(`Purchase Order ${number} already exists, skipping.`);
+      continue;
+    }
     await prisma.purchaseOrder.create({
       data: {
         tenantId: defaultTenant.id,
-        number: `PO-${String(purchaseOrders.indexOf(po) + 1).padStart(6, '0')}`,
+        number,
         supplierId: supplier.id,
         orderDate: new Date(),
         status: 'DRAFT',
@@ -294,7 +297,7 @@ async function main() {
 main()
   .catch((e) => console.error('❌ Seed failed:', e))
   .finally(() => prisma.$disconnect());
-
+  
 // import 'dotenv/config';
 // import { PrismaClient } from '@prisma/client';
 // import { PrismaPg } from '@prisma/adapter-pg';
