@@ -33,6 +33,50 @@ export class ProductsService {
   }
 
   // ─── Paginated Search ────────────────────────────────────
+  // async findAllPaginated(
+  //   tenantId: string,
+  //   page: number = 1,
+  //   limit: number = 10,
+  //   search?: string,
+  //   categoryId?: string,
+  // ) {
+  //   const skip = (page - 1) * limit;
+  //   const where: any = { tenantId, isActive: true };
+
+  //   if (categoryId) where.categoryId = categoryId;
+
+  //   if (search) {
+  //     where.OR = [
+  //       { name: { contains: search, mode: 'insensitive' } },
+  //       { sku: { contains: search, mode: 'insensitive' } },
+  //       { barcode: { contains: search, mode: 'insensitive' } },
+  //     ];
+  //   }
+
+  //   const [data, total] = await Promise.all([
+  //     this.prisma.product.findMany({
+  //       where,
+  //       skip,
+  //       take: limit,
+  //       orderBy: { createdAt: 'desc' },
+  //       include: {
+  //         category: true,
+  //         unit: true,
+  //         warehouseStocks: { include: { warehouse: true } },
+  //       },
+  //     }),
+  //     this.prisma.product.count({ where }),
+  //   ]);
+
+  //   return {
+  //     data,
+  //     total,
+  //     page,
+  //     limit,
+  //     totalPages: Math.ceil(total / limit),
+  //   };
+  // }
+
   async findAllPaginated(
     tenantId: string,
     page: number = 1,
@@ -42,9 +86,7 @@ export class ProductsService {
   ) {
     const skip = (page - 1) * limit;
     const where: any = { tenantId, isActive: true };
-
     if (categoryId) where.categoryId = categoryId;
-
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -53,23 +95,40 @@ export class ProductsService {
       ];
     }
 
+    // ── SELECT only needed fields ──
+    const selectFields = {
+      id: true,
+      sku: true,
+      name: true,
+      unitPrice: true,
+      costPrice: true,
+      isActive: true,
+      category: { select: { id: true, name: true } },
+      unit: { select: { id: true, name: true, symbol: true } },
+      warehouseStocks: {
+        select: { quantity: true },
+      },
+    };
+
     const [data, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: {
-          category: true,
-          unit: true,
-          warehouseStocks: { include: { warehouse: true } },
-        },
+        select: selectFields,
       }),
       this.prisma.product.count({ where }),
     ]);
 
+    // Compute total stock on the fly
+    const dataWithStock = data.map(p => ({
+      ...p,
+      totalStock: p.warehouseStocks.reduce((sum, ws) => sum + ws.quantity, 0),
+    }));
+
     return {
-      data,
+      data: dataWithStock,
       total,
       page,
       limit,

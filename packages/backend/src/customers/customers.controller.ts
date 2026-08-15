@@ -56,4 +56,9 @@ export class CustomersController {
   remove(@Req() req: any, @Param('id') id: string) {
     return this.customersService.remove(req.user.tenantId, id);
   }
+
+  @Get(':id/relations')
+  async getCustomerWithRelations(@Req() req: any, @Param('id') id: string) {
+    return this.customersService.getCustomerWithRelations(req.user.tenantId, id);
+  }
 }

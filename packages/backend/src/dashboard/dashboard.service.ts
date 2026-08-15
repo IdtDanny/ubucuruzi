@@ -6,7 +6,7 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   async getStats(tenantId: string) {
-    const [products, customers, lowStock] = await Promise.all([
+    const [products, customers, lowStock] = await this.prisma.$transaction([
       this.prisma.product.count({ where: { tenantId, isActive: true } }),
       this.prisma.customer.count({ where: { tenantId } }),
       this.prisma.warehouseStock.count({

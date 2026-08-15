@@ -234,6 +234,9 @@ model Customer {
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   invoices    Invoice[] // linked to Invoice model below
+  @@index([tenantId])
+  @@index([email])
+  @@index([phone])
 }
 
 model Supplier {
@@ -275,6 +278,9 @@ model Invoice {
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   customer    Customer @relation(fields: [customerId], references: [id])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 model PurchaseOrder {
@@ -294,4 +300,7 @@ model PurchaseOrder {
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   supplier    Supplier @relation(fields: [supplierId], references: [id])
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([createdAt])
 }
