@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: 'Ubucuruzi ERP',
   description: 'Manage Smarter. Grow Faster.',
   icons: {
-    icon: '/favicon.svg',
+    icon: '../../public/favicon.svg',
   },
 };
 
