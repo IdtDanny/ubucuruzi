@@ -23,9 +23,9 @@ import { GoogleStrategy } from './strategies/google.strategy';
     AuthService,
     JwtStrategy,
     // Only load GoogleStrategy if credentials are set
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [GoogleStrategy]
-      : []),
+    // ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    //   ? [GoogleStrategy]
+    //   : []),
   ],
   controllers: [AuthController],
   exports: [AuthService],
