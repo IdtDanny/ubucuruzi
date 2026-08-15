@@ -29,4 +29,9 @@ export class AuthController {
   async googleAuthRedirect(@Req() req: any) {
     return this.authService.googleLogin(req.user);
   }
+
+  @Get()
+  getHealth() {
+    return { status: 'ok', service: 'Ubucuruzi ERP API' };
+  }
 }
