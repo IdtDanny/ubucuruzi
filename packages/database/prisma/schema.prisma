@@ -54,6 +54,7 @@ model Tenant {
   invoices        Invoice[]
   purchaseOrders  PurchaseOrder[]
   quotations      Quotation[]
+  goodsReceipts  GoodsReceipt[]
 }
 
 model UserTenant {
@@ -142,6 +143,8 @@ model Product {
   stockTransfers    StockTransfer[]
   quotationItems    QuotationItem[]
   invoiceItems      InvoiceItem[]
+  purchaseItems    PurchaseItem[]
+  goodsReceiptItems GoodsReceiptItem[]
 }
 
 model Warehouse {
@@ -363,24 +366,84 @@ model InvoiceItem {
   @@index([productId])
 }
 
-model PurchaseOrder {
-  id          String   @id @default(cuid())
-  tenantId    String
-  supplierId  String
-  number      String   @unique
-  orderDate   DateTime @default(now())
-  expectedDelivery DateTime?
-  status      String   @default("DRAFT")
-  total       Float    @default(0)
-  tax         Float    @default(0)
-  discount    Float    @default(0)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ============================================================
+// 5. PURCHASES
+// ============================================================
 
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  supplier    Supplier @relation(fields: [supplierId], references: [id])
+model PurchaseOrder {
+  id               String   @id @default(cuid())
+  tenantId         String
+  number           String   @unique
+  supplierId       String
+  orderDate        DateTime @default(now())
+  expectedDelivery DateTime?
+  status           String   @default("DRAFT") // DRAFT, SENT, RECEIVED, CANCELLED
+  total            Float    @default(0)
+  tax              Float    @default(0)
+  discount         Float    @default(0)
+  discountType     String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdBy        String?
+
+  tenant           Tenant     @relation(fields: [tenantId], references: [id])
+  supplier         Supplier   @relation(fields: [supplierId], references: [id])
+  items            PurchaseItem[]
+  goodsReceipts    GoodsReceipt[]
+
   @@index([tenantId])
   @@index([supplierId])
   @@index([createdAt])
+  @@index([status])
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  purchaseOrderId String
+  productId   String
+  quantity    Int
+  unitCost    Float
+  discount    Float    @default(0)
+  taxRate     Float    @default(0)
+  total       Float
+  notes       String?
+  receivedQuantity Int @default(0) // track how many have been received
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+model GoodsReceipt {
+  id               String   @id @default(cuid())
+  tenantId         String
+  purchaseOrderId  String
+  receiptDate      DateTime @default(now())
+  notes            String?
+  createdAt        DateTime @default(now())
+  createdBy        String?
+
+  tenant           Tenant         @relation(fields: [tenantId], references: [id])
+  purchaseOrder    PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id])
+  items            GoodsReceiptItem[]
+}
+
+model GoodsReceiptItem {
+  id               String   @id @default(cuid())
+  goodsReceiptId   String
+  productId        String
+  quantity         Int
+  unitCost         Float    // cost at receipt time
+  batchNumber      String?
+  expiryDate       DateTime?
+  notes            String?
+
+  goodsReceipt     GoodsReceipt @relation(fields: [goodsReceiptId], references: [id])
+  product          Product      @relation(fields: [productId], references: [id])
+
+  @@index([goodsReceiptId])
+  @@index([productId])
 }

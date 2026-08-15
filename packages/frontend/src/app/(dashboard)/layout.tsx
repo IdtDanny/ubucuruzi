@@ -17,6 +17,7 @@ import {
   Truck,
   FileText,
   Receipt,
+  ShoppingBag,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/dashboard/suppliers', label: 'Suppliers', icon: Truck },
   { href: '/dashboard/quotations', label: 'Quotations', icon: FileText },
   { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
+  { href: '/dashboard/purchase-orders', label: 'Purchase Orders', icon: ShoppingBag },
   { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];

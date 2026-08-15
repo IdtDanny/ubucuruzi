@@ -249,6 +249,45 @@ async function main() {
   }
   console.log('✅ Quotations seeded');
 
+  // ─── Purchase Orders ──────────────────────────────────────
+  const purchaseOrders = [
+    {
+      supplierName: 'Rwanda Wholesalers Ltd',
+      items: [
+        { productSku: 'PRD-000001', qty: 10, cost: 250000 },
+        { productSku: 'PRD-000005', qty: 50, cost: 3000 },
+      ],
+    },
+  ];
+
+  for (const po of purchaseOrders) {
+    const supplier = await prisma.supplier.findFirst({ where: { name: po.supplierName, tenantId: defaultTenant.id } });
+    if (!supplier) continue;
+    const total = po.items.reduce((s, i) => s + i.qty * i.cost, 0);
+    const tax = total * 0.18;
+    await prisma.purchaseOrder.create({
+      data: {
+        tenantId: defaultTenant.id,
+        number: `PO-${String(purchaseOrders.indexOf(po) + 1).padStart(6, '0')}`,
+        supplierId: supplier.id,
+        orderDate: new Date(),
+        status: 'DRAFT',
+        total,
+        tax,
+        createdBy: defaultUser.id,
+        items: {
+          create: po.items.map(item => ({
+            product: { connect: { sku: item.productSku } },
+            quantity: item.qty,
+            unitCost: item.cost,
+            total: item.qty * item.cost,
+          })),
+        },
+      },
+    });
+  }
+  console.log('✅ Purchase Orders seeded');
+
   console.log('🎉 Seeding complete!');
 }
 
