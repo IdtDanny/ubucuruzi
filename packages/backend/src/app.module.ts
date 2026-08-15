@@ -6,8 +6,8 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
+import { AppController } from './app.controller';  
 import configuration from './config/configuration';
-import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -19,6 +19,6 @@ import { AppController } from './app.controller';
     ProductsModule,
     CategoriesModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController], 
 })
 export class AppModule {}

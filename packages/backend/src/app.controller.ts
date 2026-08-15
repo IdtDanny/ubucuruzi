@@ -4,6 +4,10 @@ import { Controller, Get } from '@nestjs/common';
 export class AppController {
   @Get()
   getHealth() {
-    return { status: 'ok', service: 'Ubucuruzi ERP API', timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      service: 'Ubucuruzi ERP API',
+      timestamp: new Date().toISOString(),
+    };
   }
 }
