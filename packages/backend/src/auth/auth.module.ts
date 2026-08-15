@@ -22,7 +22,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
   providers: [
     AuthService,
     JwtStrategy,
-    // Only register GoogleStrategy if credentials exist
+    // Only load GoogleStrategy if credentials are set
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [GoogleStrategy]
       : []),
