@@ -116,13 +116,32 @@ export class CustomersService {
   }
 
   // ─── Placeholder for customer with relations (will be used later) ──
-  // This will be expanded when we implement Invoices & Quotations.
   async getCustomerWithRelations(tenantId: string, id: string) {
     const customer = await this.prisma.customer.findFirst({
       where: { id, tenantId },
       include: {
-        // invoices: { ... },   // to be added in Phase 7
-        // quotations: { ... }, // to be added in Phase 7
+        invoices: {
+          select: {
+            id: true,
+            number: true,
+            total: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
+        quotations: {
+          select: {
+            id: true,
+            number: true,
+            total: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
       },
     });
     if (!customer) throw new NotFoundException('Customer not found');

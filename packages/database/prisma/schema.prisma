@@ -53,6 +53,7 @@ model Tenant {
   suppliers       Supplier[]
   invoices        Invoice[]
   purchaseOrders  PurchaseOrder[]
+  quotations      Quotation[]
 }
 
 model UserTenant {
@@ -139,6 +140,8 @@ model Product {
   warehouseStocks   WarehouseStock[]
   stockMovements    StockMovement[]
   stockTransfers    StockTransfer[]
+  quotationItems    QuotationItem[]
+  invoiceItems      InvoiceItem[]
 }
 
 model Warehouse {
@@ -234,6 +237,7 @@ model Customer {
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   invoices    Invoice[] // linked to Invoice model below
+  quotations  Quotation[]
   @@index([tenantId])
   @@index([email])
   @@index([phone])
@@ -258,29 +262,105 @@ model Supplier {
 }
 
 // ============================================================
-// 4. PLACEHOLDER FOR SALES & PURCHASES (Phase 7+)
+// 4. SALES: QUOTATIONS & INVOICES
 // ============================================================
 
-model Invoice {
+model Quotation {
   id          String   @id @default(cuid())
   tenantId    String
-  customerId  String
   number      String   @unique
+  customerId  String
   issueDate   DateTime @default(now())
-  dueDate     DateTime?
-  status      String   @default("DRAFT")
+  validUntil  DateTime?
+  status      String   @default("DRAFT")  // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED
   total       Float    @default(0)
   tax         Float    @default(0)
   discount    Float    @default(0)
+  discountType String? // PERCENTAGE, FIXED
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  createdBy   String?
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   customer    Customer @relation(fields: [customerId], references: [id])
+  items       QuotationItem[]
+  invoices   Invoice[]     
+
   @@index([tenantId])
   @@index([customerId])
   @@index([createdAt])
+}
+
+model QuotationItem {
+  id          String   @id @default(cuid())
+  quotationId String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+  discount    Float    @default(0)
+  taxRate     Float    @default(0)
+  total       Float
+  notes       String?
+
+  quotation   Quotation @relation(fields: [quotationId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+
+  @@index([quotationId])
+  @@index([productId])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  tenantId      String
+  number        String   @unique
+  customerId    String
+  invoiceType   String   @default("TAX_INVOICE") // TAX_INVOICE, PROFORMA, RECEIPT
+  issueDate     DateTime @default(now())
+  dueDate       DateTime
+  status        String   @default("DRAFT")  // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  total         Float    @default(0)
+  tax           Float    @default(0)
+  discount      Float    @default(0)
+  discountType  String?
+  notes         String?
+  paymentStatus String   @default("UNPAID")  // UNPAID, PARTIAL, PAID
+  paidAmount    Float    @default(0)
+  balanceDue    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     String?
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  customer      Customer @relation(fields: [customerId], references: [id])
+  items         InvoiceItem[]
+
+  // Optional: link to quotation
+  quotationId   String?
+  quotation     Quotation? @relation(fields: [quotationId], references: [id])
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+  discount    Float    @default(0)
+  taxRate     Float    @default(0)
+  total       Float
+  notes       String?
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([invoiceId])
+  @@index([productId])
 }
 
 model PurchaseOrder {

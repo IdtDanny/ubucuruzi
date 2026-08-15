@@ -202,6 +202,53 @@ async function main() {
   }
   console.log('✅ Suppliers seeded');
 
+  // ─── Quotations ──────────────────────────────────────────
+  const quotations = [
+    {
+      customerEmail: 'jean@example.com',
+      items: [
+        { productSku: 'PRD-000001', qty: 2, price: 350000 },
+        { productSku: 'PRD-000003', qty: 10, price: 15000 },
+      ],
+    },
+    {
+      customerEmail: 'grace@example.com',
+      items: [
+        { productSku: 'PRD-000002', qty: 1, price: 1200000 },
+        { productSku: 'PRD-000005', qty: 5, price: 5000 },
+      ],
+    },
+  ];
+
+  for (const q of quotations) {
+    const customer = await prisma.customer.findFirst({ where: { email: q.customerEmail, tenantId: defaultTenant.id } });
+    if (!customer) continue;
+    const total = q.items.reduce((s, i) => s + i.qty * i.price, 0);
+    const tax = total * 0.18;
+    await prisma.quotation.create({
+      data: {
+        tenantId: defaultTenant.id,
+        number: `QTN-${String(quotations.indexOf(q) + 1).padStart(6, '0')}`,
+        customerId: customer.id,
+        issueDate: new Date(),
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: 'DRAFT',
+        total,
+        tax,
+        createdBy: defaultUser.id,
+        items: {
+          create: q.items.map(item => ({
+            product: { connect: { sku: item.productSku } },
+            quantity: item.qty,
+            unitPrice: item.price,
+            total: item.qty * item.price,
+          })),
+        },
+      },
+    });
+  }
+  console.log('✅ Quotations seeded');
+
   console.log('🎉 Seeding complete!');
 }
 

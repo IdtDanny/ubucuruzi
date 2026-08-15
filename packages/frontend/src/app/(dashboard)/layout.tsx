@@ -14,6 +14,9 @@ import {
   LogOut,
   Menu,
   X,
+  Truck,
+  FileText,
+  Receipt,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,6 +25,9 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/customers', label: 'Customers', icon: Users },
+  { href: '/dashboard/suppliers', label: 'Suppliers', icon: Truck },
+  { href: '/dashboard/quotations', label: 'Quotations', icon: FileText },
+  { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
   { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
