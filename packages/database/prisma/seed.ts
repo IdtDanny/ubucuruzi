@@ -71,6 +71,98 @@ async function main() {
   });
 
   console.log('✅ Dummy user created: admin@example.com / password123');
+
+  // ─── Units of Measure ──────────────────────────────────
+  const units = [
+    { name: 'Piece', symbol: 'pc' },
+    { name: 'Kilogram', symbol: 'kg' },
+    { name: 'Gram', symbol: 'g' },
+    { name: 'Liter', symbol: 'L' },
+    { name: 'Meter', symbol: 'm' },
+    { name: 'Box', symbol: 'bx' },
+  ];
+
+  for (const unit of units) {
+    await prisma.unitOfMeasure.upsert({
+      where: { id: `unit_${unit.symbol}` }, // or use a composite unique if you have one
+      update: {},
+      create: {
+        ...unit,
+        tenantId: defaultTenant.id,
+      },
+    });
+  }
+  console.log('✅ Units of measure seeded');
+
+  // ─── Categories ──────────────────────────────────────
+  const categories = [
+    { name: 'Electronics', description: 'Phones, laptops, accessories' },
+    { name: 'Clothing', description: 'Apparel and fashion' },
+    { name: 'Food & Beverage', description: 'Perishable and packaged goods' },
+    { name: 'Hardware', description: 'Tools, building materials' },
+  ];
+
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { id: `cat_${cat.name.toLowerCase()}` },
+      update: {},
+      create: {
+        ...cat,
+        tenantId: defaultTenant.id,
+      },
+    });
+  }
+  console.log('✅ Categories seeded');
+
+  // ─── Warehouse ──────────────────────────────────────
+  const warehouse = await prisma.warehouse.upsert({
+    where: { id: 'default-warehouse' },
+    update: {},
+    create: {
+      id: 'default-warehouse',
+      name: 'Main Warehouse',
+      location: 'Kigali, Rwanda',
+      isDefault: true,
+      tenantId: defaultTenant.id,
+    },
+  });
+  console.log('✅ Warehouse seeded');
+
+  // ─── Products ──────────────────────────────────────
+  const products = [
+    { name: 'Smartphone X', sku: 'PRD-000001', unitPrice: 350000, costPrice: 280000, categoryName: 'Electronics', unitSymbol: 'pc' },
+    { name: 'Laptop Pro', sku: 'PRD-000002', unitPrice: 1200000, costPrice: 950000, categoryName: 'Electronics', unitSymbol: 'pc' },
+    { name: 'T-Shirt (White)', sku: 'PRD-000003', unitPrice: 15000, costPrice: 8000, categoryName: 'Clothing', unitSymbol: 'pc' },
+    { name: 'Rice (5kg)', sku: 'PRD-000004', unitPrice: 12000, costPrice: 9000, categoryName: 'Food & Beverage', unitSymbol: 'kg' },
+    { name: 'Hammer', sku: 'PRD-000005', unitPrice: 5000, costPrice: 3000, categoryName: 'Hardware', unitSymbol: 'pc' },
+  ];
+
+  for (const prod of products) {
+    const category = await prisma.category.findFirst({ where: { name: prod.categoryName, tenantId: defaultTenant.id } });
+    const unit = await prisma.unitOfMeasure.findFirst({ where: { symbol: prod.unitSymbol, tenantId: defaultTenant.id } });
+    await prisma.product.upsert({
+      where: { sku: prod.sku },
+      update: {},
+      create: {
+        name: prod.name,
+        sku: prod.sku,
+        unitPrice: prod.unitPrice,
+        costPrice: prod.costPrice,
+        tenantId: defaultTenant.id,
+        categoryId: category?.id || null,
+        unitOfMeasureId: unit?.id || null,
+        warehouseStocks: {
+          create: {
+            warehouseId: warehouse.id,
+            quantity: Math.floor(Math.random() * 50) + 10,
+            reserved: 0,
+          },
+        },
+      },
+    });
+  }
+  console.log('✅ Products seeded');
+
   console.log('🎉 Seeding complete!');
 }
 

@@ -36,4 +36,12 @@ export class CategoriesService {
     await this.findOne(tenantId, id);
     return this.prisma.category.delete({ where: { id } });
   }
+
+  async getSelectList(tenantId: string) {
+    return this.prisma.category.findMany({
+      where: { tenantId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+  }
 }

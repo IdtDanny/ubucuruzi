@@ -8,6 +8,7 @@ import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AppController } from './app.controller';  
 import configuration from './config/configuration';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import configuration from './config/configuration';
     RolesModule,
     ProductsModule,
     CategoriesModule,
+    DashboardModule,
   ],
   controllers: [AppController], 
 })

@@ -31,4 +31,9 @@ export class CategoriesController {
   remove(@Req() req: any, @Param('id') id: string) {
     return this.categoriesService.remove(req.user.tenantId, id);
   }
+
+  @Get('select')
+  getSelectList(@Req() req: any) {
+    return this.categoriesService.getSelectList(req.user.tenantId);
+  }
 }
