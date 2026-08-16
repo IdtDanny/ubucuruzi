@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from './dto/create-purchase-order.dto';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -12,6 +13,9 @@ export class PurchaseOrdersService {
   }
 
   async create(tenantId: string, userId: string, dto: CreatePurchaseOrderDto) {
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('At least one purchase item is required');
+    }
     const number = await this.generateNumber(tenantId);
     const total = dto.items.reduce((sum, item) => sum + (item.quantity * item.unitCost - (item.discount || 0)), 0);
     const tax = total * 0.18; // configurable later

@@ -50,10 +50,50 @@ export class CreatePurchaseOrderDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
+  @IsString()
+  status?: string; // DRAFT, SENT, RECEIVED, CANCELLED
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PurchaseItemDto)
-  items!: PurchaseItemDto[];
+  items?: PurchaseItemDto[];
 }
 
-export class UpdatePurchaseOrderDto extends CreatePurchaseOrderDto {}
+export class UpdatePurchaseOrderDto {
+  @IsOptional()
+  @IsString()
+  supplierId?: string;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  orderDate?: Date;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  expectedDelivery?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  discount?: number;
+
+  @IsOptional()
+  @IsString()
+  discountType?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PurchaseItemDto)
+  items?: PurchaseItemDto[];
+}
