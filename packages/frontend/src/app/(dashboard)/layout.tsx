@@ -30,7 +30,7 @@ const navItems = [
   { href: '/dashboard/quotations', label: 'Quotations', icon: FileText },
   { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
   { href: '/dashboard/purchase-orders', label: 'Purchase Orders', icon: ShoppingBag },
-  { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
+  // { href: '/dashboard/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
