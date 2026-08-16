@@ -115,11 +115,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Low Stock Alert */}
-      {stats?.lowStockItems > 0 && (
+      {(stats?.lowStockItems ?? 0) > 0 && (
         <div className="glass-deep border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 text-amber-600 dark:text-amber-400">
           <AlertCircle className="h-5 w-5" />
           <span className="text-sm font-medium">
-            {stats.lowStockItems} product{stats.lowStockItems > 1 ? 's' : ''} are low on stock.
+            {(stats?.lowStockItems ?? 0)} product{(stats?.lowStockItems ?? 0) > 1 ? 's' : ''} are low on stock.
           </span>
         </div>
       )}
