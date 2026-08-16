@@ -1,39 +1,42 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateQuotationDto, UpdateQuotationDto } from './dto/create-quotation.dto';
-import { BadRequestException } from '@nestjs/common';
+import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/create-invoice.dto';
 
 @Injectable()
-export class QuotationsService {
+export class InvoicesService {
   constructor(private prisma: PrismaService) {}
 
   private async generateNumber(tenantId: string): Promise<string> {
-    const count = await this.prisma.quotation.count({ where: { tenantId } });
-    return `QTN-${String(count + 1).padStart(6, '0')}`;
+    const count = await this.prisma.invoice.count({ where: { tenantId } });
+    return `INV-${String(count + 1).padStart(6, '0')}`;
   }
 
-  async create(tenantId: string, userId: string, dto: CreateQuotationDto) {
+  async create(tenantId: string, userId: string, dto: CreateInvoiceDto) {
     if (!dto.items || dto.items.length === 0) {
-      throw new BadRequestException('At least one item is required');
+      throw new BadRequestException('At least one invoice item is required');
     }
+
     const number = await this.generateNumber(tenantId);
     const total = dto.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice - (item.discount || 0)), 0);
-    const tax = total * 0.18; // default 18% VAT; can be made configurable later
+    const tax = total * 0.18; // 18% VAT – can be made configurable later
 
-    return this.prisma.quotation.create({
+    return this.prisma.invoice.create({
       data: {
         tenantId,
         number,
         customerId: dto.customerId,
         issueDate: dto.issueDate || new Date(),
-        validUntil: dto.validUntil,
+        dueDate: dto.dueDate,
         status: dto.status || 'DRAFT',
+        paymentStatus: 'UNPAID',
+        invoiceType: dto.invoiceType || 'TAX_INVOICE',
         total,
         tax,
         discount: dto.discount || 0,
         discountType: dto.discountType,
         notes: dto.notes,
         createdBy: userId,
+        quotationId: dto.quotationId || undefined,
         items: {
           create: dto.items.map(item => ({
             productId: item.productId,
@@ -68,7 +71,7 @@ export class QuotationsService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.quotation.findMany({
+      this.prisma.invoice.findMany({
         where,
         skip,
         take: limit,
@@ -79,47 +82,53 @@ export class QuotationsService {
           customer: { select: { id: true, name: true } },
           total: true,
           status: true,
+          paymentStatus: true,
           issueDate: true,
-          validUntil: true,
+          dueDate: true,
           createdAt: true,
         },
       }),
-      this.prisma.quotation.count({ where }),
+      this.prisma.invoice.count({ where }),
     ]);
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(tenantId: string, id: string) {
-    const quotation = await this.prisma.quotation.findFirst({
+    const invoice = await this.prisma.invoice.findFirst({
       where: { id, tenantId },
       include: {
         customer: true,
         items: { include: { product: { select: { id: true, name: true, sku: true } } } },
+        quotation: true,
       },
     });
-    if (!quotation) throw new NotFoundException('Quotation not found');
-    return quotation;
+    if (!invoice) throw new NotFoundException('Invoice not found');
+    return invoice;
   }
 
-  async update(tenantId: string, id: string, dto: UpdateQuotationDto) {
-    // Recalculate totals if items change (simplified: we'll only update header)
-    return this.prisma.quotation.update({
+  async update(tenantId: string, id: string, dto: UpdateInvoiceDto) {
+    await this.findOne(tenantId, id);
+    return this.prisma.invoice.update({
       where: { id },
       data: {
         customerId: dto.customerId,
         issueDate: dto.issueDate,
-        validUntil: dto.validUntil,
+        dueDate: dto.dueDate,
         status: dto.status,
+        paymentStatus: dto.paymentStatus,
+        invoiceType: dto.invoiceType,
         discount: dto.discount,
         discountType: dto.discountType,
         notes: dto.notes,
+        quotationId: dto.quotationId,
+        // Note: items are not updated via this method; you'd need separate endpoints for items.
       },
     });
   }
 
   async remove(tenantId: string, id: string) {
     await this.findOne(tenantId, id);
-    return this.prisma.quotation.delete({ where: { id } });
+    return this.prisma.invoice.delete({ where: { id } });
   }
 }
