@@ -291,6 +291,64 @@ async function main() {
   }
   console.log('✅ Purchase Orders seeded');
 
+  // ─── Invoices (mock data for charts) ────────────────────
+  const now = new Date();
+  const months = 6;
+  const invoices = [];
+
+  for (let i = 0; i < months; i++) {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() - i);
+    const monthStr = date.toISOString().slice(0, 7); // YYYY-MM
+    const customer = await prisma.customer.findFirst({ where: { tenantId: defaultTenant.id } });
+    if (!customer) continue;
+
+    const total = Math.floor(Math.random() * 500000) + 50000;
+    const tax = total * 0.18;
+    const number = `INV-${String(i + 1).padStart(6, '0')}`;
+    const existing = await prisma.invoice.findUnique({ where: { number } });
+    if (existing) continue;
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        tenantId: defaultTenant.id,
+        number,
+        customerId: customer.id,
+        issueDate: date,
+        dueDate: new Date(date.getTime() + 30 * 24 * 60 * 60 * 1000),
+        status: 'PAID',
+        paymentStatus: 'PAID',
+        total,
+        tax,
+        invoiceType: 'TAX_INVOICE',
+        createdBy: defaultUser.id,
+      },
+    });
+
+    // Add 2-3 items per invoice
+    const productCount = await prisma.product.count({ where: { tenantId: defaultTenant.id } });
+    for (let j = 0; j < 2 + Math.floor(Math.random() * 2); j++) {
+      const product = await prisma.product.findFirst({
+        where: { tenantId: defaultTenant.id },
+        skip: Math.floor(Math.random() * productCount),
+      });
+      if (!product) continue;
+      const qty = Math.floor(Math.random() * 5) + 1;
+      const unitPrice = product.unitPrice;
+      const totalItem = qty * unitPrice;
+      await prisma.invoiceItem.create({
+        data: {
+          invoiceId: invoice.id,
+          productId: product.id,
+          quantity: qty,
+          unitPrice,
+          total: totalItem,
+        },
+      });
+    }
+  }
+  console.log('✅ Mock invoices seeded');
+
   console.log('🎉 Seeding complete!');
 }
 
