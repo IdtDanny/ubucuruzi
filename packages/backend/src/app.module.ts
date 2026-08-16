@@ -11,6 +11,8 @@ import { CustomersModule } from './customers/customers.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { AppController } from './app.controller';
 import configuration from './config/configuration';
+import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -24,7 +26,17 @@ import configuration from './config/configuration';
     DashboardModule,
     CustomersModule,
     SuppliersModule,
+    CacheModule.register({
+      ttl: 300, // 5 minutes
+      max: 100,
+    }),
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+  ],
 })
 export class AppModule {}
