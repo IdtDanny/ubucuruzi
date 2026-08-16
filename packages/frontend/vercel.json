@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://ubucuruzi-backend.vercel.app/$1"
+    }
+  ]
+}
