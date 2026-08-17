@@ -149,24 +149,24 @@
 //         </motion.div>
 //       </section>
 
-//       {/* Footer */}
-//       <footer className="border-t border-border/40 py-8">
-//         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-//           <div className="flex items-center space-x-2">
-//             <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center">
-//               <span className="text-white font-bold text-xs">U</span>
-//             </div>
-//             <span>Ubucuruzi ERP</span>
-//           </div>
-//           <div className="flex gap-6">
-//             <Link href="#" className="hover:text-foreground transition-colors">About</Link>
-//             <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
-//             <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-//           </div>
-//           <div>&copy; {new Date().getFullYear()} All rights reserved.</div>
-//         </div>
-//       </footer>
-//     </div>
+    //   {/* Footer */}
+    //   <footer className="border-t border-border/40 py-8">
+    //     <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+    //       <div className="flex items-center space-x-2">
+    //         <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center">
+    //           <span className="text-white font-bold text-xs">U</span>
+    //         </div>
+    //         <span>Ubucuruzi ERP</span>
+    //       </div>
+    //       <div className="flex gap-6">
+    //         <Link href="#" className="hover:text-foreground transition-colors">About</Link>
+    //         <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
+    //         <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
+    //       </div>
+    //       <div>&copy; {new Date().getFullYear()} All rights reserved.</div>
+    //     </div>
+    //   </footer>
+    // </div>
 //   );
 // }
 
@@ -188,14 +188,20 @@ export default function LandingPage() {
           Manage Smarter. Grow Faster.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <Link href="/login">
-            <Button size="lg" variant="outline">Sign In</Button>
+          <Link href="/login" className="w-full gradient-primary text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow py-2 text-base font-medium rounded-xl">
+            <Button size="sm">Sign In</Button>
           </Link>
-          <Link href="/register">
+          {/* <Link href="/register">
             <Button size="lg">Get Started</Button>
-          </Link>
+          </Link> */}
         </div>
       </div>
+      {/* Footer */}
+      <footer className="py-8">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+          <div>&copy; {new Date().getFullYear()} All rights reserved.</div>
+        </div>
+      </footer>
     </div>
   );
 }
